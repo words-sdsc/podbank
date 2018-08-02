@@ -1,0 +1,53 @@
+FROM ubuntu:latest
+MAINTAINER Daniel Crawl <danielcrawl@gmail.com>
+
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+        curl \
+        git \
+        htop \
+        nodejs \
+        npm \
+        python3-pip \
+        tzdata \
+        unzip \
+        vim && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN pip3 install \
+        argparse \
+        imutils \
+        jupyter \
+        jupyterdrive \
+        keras \
+        matplotlib \
+        numpy \
+        oauthenticator \
+        opencv-python \
+        pandas \
+        requests \
+        sklearn \
+        tensorflow
+
+RUN pip3 install --upgrade notebook
+
+RUN npm install -g configurable-http-proxy
+
+# already exists in tensorflow image
+#RUN mkdir /root/.jupyter
+ADD suave-jupyterhub_config.py /etc/jupyterhub/jupyterhub_config.py
+ADD ipython_config.py /etc/ipython/ipython_config.py
+ADD ipython_kernel_config.py /etc/ipython/ipython_kernel_config.py
+ADD ipython_notebook_config.json /etc/ipython/ipython_notebook_config.json
+
+# set workdir to root directory so jupyter can access entire file system
+WORKDIR /
+
+# set time zone
+ENV TZ America/Los_Angeles
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+EXPOSE 8888
+
+CMD python3 jupyterhub -f /etc/jupyterhub/jupyterhub_config.py --port 8888
